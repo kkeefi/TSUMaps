@@ -38,9 +38,8 @@ class DecisionTreeActivity : ComponentActivity() {
         }
     }
 }
-
 val translationMap = mapOf(
-"location" to "Где вы находитесь?",
+    "location" to "Где вы находитесь?",
     "budget" to "Какой у вас бюджет?",
     "time_available" to "Сколько у вас времени?",
     "food_type" to "Что вы предпочитаете?",
@@ -56,6 +55,7 @@ val translationMap = mapOf(
     "medium" to "Достаточно",
     "medium_bud" to "Средний",
     "low_bud" to "Низкий",
+    "high_bud" to "Высокий",
     "medium_que" to "Недолго",
     "low_que" to "Нет",
     "high_que" to "Да",
@@ -86,7 +86,6 @@ val translationMap = mapOf(
     "Belka_Coffee" to "Кофе «Белка»",
     "Rostics" to "Rostic's"
 )
-
 @Composable
 fun DecisionTreeScreen() {
     val csvData = """
@@ -102,7 +101,7 @@ bus_stop;medium_bud;medium;full_meal;medium_que;good;Minutka_Cafe
 second_building;low_bud;short;pancakes;low_que;good;Siberian_Pancakes
 campus_center;low_bud;medium;pancakes;low_que;good;Siberian_Pancakes
 main_building;low_bud;very_short;pancakes;low_que;bad;Siberian_Pancakes
-bus_stop;low;medium;pancakes;low_que;good;Siberian_Pancakes
+bus_stop;low_bud;medium;pancakes;low_que;good;Siberian_Pancakes
 second_building;low_bud;short;coffee;low_que;good;Starbooks_Main
 campus_center;low_bud;short;coffee;low_que;good;Starbooks_Main
 main_building;low_bud;very_short;coffee;low_que;good;Starbooks_Main
@@ -114,7 +113,7 @@ bus_stop;low_bud;medium;coffee;medium_que;good;Starbooks_SibGMU
 second_building;low_bud;very_short;full_meal;low_que;bad;Second_Building_Cafe
 campus_center;low_bud;medium;full_meal;medium_que;good;Second_Building_Cafe
 main_building;low_bud;medium;full_meal;medium_que;good;Second_Building_Cafe
-bus_stop;low_bud;medium;full_meal;high;good;Second_Building_Cafe
+bus_stop;low_bud;medium;full_meal;high_que;good;Second_Building_Cafe
 second_building;low_bud;very_short;coffee;low_que;bad;XO_Bakery
 campus_center;low_bud;medium;coffee;low_que;good;XO_Bakery
 main_building;low_bud;medium;coffee;low_que;good;XO_Bakery
@@ -147,22 +146,22 @@ second_building;low_bud;medium;coffee;low_que;good;Baba_Roma
 campus_center;low_bud;short;coffee;low_que;good;Baba_Roma
 main_building;low_bud;medium;coffee;low_que;good;Baba_Roma
 bus_stop;low_bud;short;coffee;low_que;good;Baba_Roma
-second_building;high;medium;full_meal;low_que;good;Blizhe_Gastro
-campus_center;high;medium;full_meal;low_que;good;Blizhe_Gastro
-main_building;high;medium;full_meal;low_que;good;Blizhe_Gastro
-bus_stop;high;medium;full_meal;low_que;good;Blizhe_Gastro
-second_building;high;medium;full_meal;medium_que;good;Baguette_Omelet
-campus_center;high;medium;full_meal;medium_que;bad;Baguette_Omelet
-main_building;high;medium;full_meal;medium_que;good;Baguette_Omelet
-bus_stop;high;medium;full_meal;medium_que;bad;Baguette_Omelet
+second_building;high_bud;medium;full_meal;low_que;good;Blizhe_Gastro
+campus_center;high_bud;medium;full_meal;low_que;good;Blizhe_Gastro
+main_building;high_bud;medium;full_meal;low_que;good;Blizhe_Gastro
+bus_stop;high_bud;medium;full_meal;low_que;good;Blizhe_Gastro
+second_building;high_bud;medium;full_meal;medium_que;good;Baguette_Omelet
+campus_center;high_bud;medium;full_meal;medium_que;bad;Baguette_Omelet
+main_building;high_bud;medium;full_meal;medium_que;good;Baguette_Omelet
+bus_stop;high_bud;medium;full_meal;medium_que;bad;Baguette_Omelet
 second_building;low_bud;medium;snack;medium_que;good;Yarche
 campus_center;low_bud;medium;snack;medium_que;good;Yarche
 main_building;low_bud;short;snack;medium_que;good;Yarche
 bus_stop;low_bud;medium;snack;medium_que;good;Yarche
-second_building;high;medium;full_meal;medium_que;good;Vechniy_Zov
-campus_center;high;medium;full_meal;medium_que;good;Vechniy_Zov
-main_building;high;medium;full_meal;medium_que;good;Vechniy_Zov
-bus_stop;high;medium;full_meal;medium_que;good;Vechniy_Zov
+second_building;high_bud;medium;full_meal;medium_que;good;Vechniy_Zov
+campus_center;high_bud;medium;full_meal;medium_que;good;Vechniy_Zov
+main_building;high_bud;medium;full_meal;medium_que;good;Vechniy_Zov
+bus_stop;high_bud;medium;full_meal;medium_que;good;Vechniy_Zov
 """.trimIndent()
 
     var csvInput by remember { mutableStateOf(csvData) }
