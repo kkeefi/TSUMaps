@@ -28,6 +28,8 @@
         <activity android:name=".DecisionTreeActivity"
             android:exported="false" />
 
+        <activity android:name=".GeneticAlgorithmActivity" />
+        <activity android:name=".NeuralNetworkActivity" />
 
     </application>
 </manifest>

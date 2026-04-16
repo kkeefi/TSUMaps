@@ -5,7 +5,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,7 +28,9 @@ class MainEntryActivity : ComponentActivity() {
                 MainScreen(
                     onRouteClick = { startActivity(Intent(this, RouteActivity::class.java)) },
                     onClustersClick = { startActivity(Intent(this, ClustersActivity::class.java)) },
-                    onDecisionTreeClick = { startActivity(Intent(this, DecisionTreeActivity::class.java)) }
+                    onDecisionTreeClick = { startActivity(Intent(this, DecisionTreeActivity::class.java)) },
+                    onGeneticClick = { startActivity(Intent(this, GeneticAlgorithmActivity::class.java)) },
+                    onNeuralNetClick = { startActivity(Intent(this, NeuralNetworkActivity::class.java)) }
                 )
             }
         }
@@ -35,7 +39,15 @@ class MainEntryActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onRouteClick: () -> Unit, onClustersClick: () -> Unit, onDecisionTreeClick: () -> Unit) {
+fun MainScreen(
+    onRouteClick: () -> Unit,
+    onClustersClick: () -> Unit,
+    onDecisionTreeClick: () -> Unit,
+    onGeneticClick: () -> Unit,
+    onNeuralNetClick: () -> Unit
+) {
+    val tsuBlue = colorResource(id = R.color.tsu_blue_primary)
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -44,14 +56,19 @@ fun MainScreen(onRouteClick: () -> Unit, onClustersClick: () -> Unit, onDecision
                         Image(
                             painter = painterResource(id = R.drawable.tsu_logo),
                             contentDescription = null,
-                            modifier = Modifier.size(40.dp).padding(end = 8.dp)
+                            modifier = Modifier
+                                .size(36.dp)
+                                .padding(end = 8.dp)
                         )
-                        Text("ТГУ Навигатор", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text(
+                            "ТГУ Навигатор",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 20.sp
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(id = R.color.tsu_blue_primary)
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = tsuBlue)
             )
         }
     ) { padding ->
@@ -59,31 +76,76 @@ fun MainScreen(onRouteClick: () -> Unit, onClustersClick: () -> Unit, onDecision
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            MenuButton("А* Маршрут (Карта из JSON)", onRouteClick)
-            MenuButton("Кластеры (K-Means)", onClustersClick)
-            MenuButton("Дерево решений", onDecisionTreeClick)
 
-            MenuButton("Генетический алгоритм", {}, enabled = false)
-            MenuButton("Муравьиный алгоритм", {}, enabled = false)
+            SectionLabel("Навигация")
+            AlgoButton(
+                text = "А* — Маршрут по карте",
+                subtitle = "Построить путь между двумя точками",
+                onClick = onRouteClick
+            )
+
+            SectionLabel("Анализ данных")
+            AlgoButton(
+                text = "K-Means — Кластеры",
+                subtitle = "Расставить точки и найти кластеры",
+                onClick = onClustersClick
+            )
+            AlgoButton(
+                text = "Дерево решений",
+                subtitle = "Подобрать заведение по предпочтениям",
+                onClick = onDecisionTreeClick
+            )
+
+            SectionLabel("Оптимизация маршрута")
+            AlgoButton(
+                text = "Генетический алгоритм",
+                subtitle = "Маршрут для покупки нескольких блюд",
+                onClick = onGeneticClick
+            )
+
+            SectionLabel("Оценка заведения")
+            AlgoButton(
+                text = "Нейросеть — распознавание цифры",
+                subtitle = "Нарисуйте оценку от 0 до 9",
+                onClick = onNeuralNetClick
+            )
         }
     }
 }
 
 @Composable
-fun MenuButton(text: String, onClick: () -> Unit, enabled: Boolean = true) {
+fun SectionLabel(text: String) {
+    Text(
+        text = text.uppercase(),
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        color = Color.Gray,
+        letterSpacing = 1.sp,
+        modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+    )
+}
+
+@Composable
+fun AlgoButton(text: String, subtitle: String, onClick: () -> Unit) {
+    val tsuBlue = colorResource(id = R.color.tsu_blue_primary)
     Button(
         onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier.fillMaxWidth().height(80.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = colorResource(id = R.color.tsu_blue_primary)
-        ),
-        shape = MaterialTheme.shapes.medium
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(68.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = tsuBlue),
+        shape = RoundedCornerShape(12.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
-        Text(text = text, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(text = text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+            Text(text = subtitle, fontSize = 12.sp, color = Color.White.copy(alpha = 0.75f))
+        }
     }
 }
