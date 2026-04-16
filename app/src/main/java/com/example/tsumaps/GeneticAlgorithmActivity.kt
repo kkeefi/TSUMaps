@@ -196,9 +196,9 @@ fun GeneticAlgorithmScreen(onBack: () -> Unit) {
                     statusText = "Алгоритм работает..."
 
                     coroutineScope.launch {
-//                        val calendar = java.util.Calendar.getInstance()
-//                        val currentMinutes = calendar.get(java.util.Calendar.HOUR_OF_DAY) * 60 + calendar.get(java.util.Calendar.MINUTE)
-                        val currentMinutes = 800
+                        val calendar = java.util.Calendar.getInstance()
+                        val currentMinutes = calendar.get(java.util.Calendar.HOUR_OF_DAY) * 60 + calendar.get(java.util.Calendar.MINUTE)
+//                        val currentMinutes = 800
 
                         val result = withContext(Dispatchers.Default) {
                             val ga = GeneticAlgorithm(
