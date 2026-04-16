@@ -7,7 +7,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,11 +28,11 @@ class MainEntryActivity : ComponentActivity() {
         setContent {
             TSUMapsTheme {
                 MainScreen(
-                    onRouteClick = { startActivity(Intent(this, RouteActivity::class.java)) },
-                    onClustersClick = { startActivity(Intent(this, ClustersActivity::class.java)) },
+                    onRouteClick        = { startActivity(Intent(this, RouteActivity::class.java)) },
+                    onClustersClick     = { startActivity(Intent(this, ClustersActivity::class.java)) },
                     onDecisionTreeClick = { startActivity(Intent(this, DecisionTreeActivity::class.java)) },
-                    onGeneticClick = { startActivity(Intent(this, GeneticAlgorithmActivity::class.java)) },
-                    onNeuralNetClick = { startActivity(Intent(this, NeuralNetworkActivity::class.java)) }
+                    onGeneticClick      = { startActivity(Intent(this, GeneticAlgorithmActivity::class.java)) },
+                    onNeuralNetClick    = { startActivity(Intent(this, NeuralNetworkActivity::class.java)) },
                 )
             }
         }
@@ -44,7 +46,7 @@ fun MainScreen(
     onClustersClick: () -> Unit,
     onDecisionTreeClick: () -> Unit,
     onGeneticClick: () -> Unit,
-    onNeuralNetClick: () -> Unit
+    onNeuralNetClick: () -> Unit,
 ) {
     val tsuBlue = colorResource(id = R.color.tsu_blue_primary)
 
@@ -76,6 +78,7 @@ fun MainScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {

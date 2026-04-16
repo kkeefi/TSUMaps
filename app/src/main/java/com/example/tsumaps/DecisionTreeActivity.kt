@@ -3,24 +3,13 @@ package com.example.tsumaps
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
@@ -30,14 +19,19 @@ import androidx.compose.ui.unit.sp
 import com.example.tsumaps.algorithms.Decision_tree.Node
 import com.example.tsumaps.algorithms.Decision_tree.buildDecisionTree
 import com.example.tsumaps.algorithms.Decision_tree.parseCSV
+import com.example.tsumaps.ui.theme.TSUMapsTheme
+
 class DecisionTreeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            DecisionTreeScreen()
+            TSUMapsTheme {
+                DecisionTreeScreen(onBack = { finish() })
+            }
         }
     }
 }
+
 val translationMap = mapOf(
     "location" to "Где вы находитесь?",
     "budget" to "Какой у вас бюджет?",
@@ -86,10 +80,9 @@ val translationMap = mapOf(
     "Belka_Coffee" to "Кофе «Белка»",
     "Rostics" to "Rostic's"
 )
-@Composable
-fun DecisionTreeScreen() {
-    val csvData = """
-        location;budget;time_available;food_type;queue_tolerance;weather;recommended_place
+
+private val DEFAULT_CSV = """
+location;budget;time_available;food_type;queue_tolerance;weather;recommended_place
 second_building;medium_bud;short;full_meal;medium_que;good;Stolovaya_1
 campus_center;medium_bud;short;full_meal;medium_que;good;Stolovaya_1
 main_building;medium_bud;short;full_meal;medium_que;bad;Stolovaya_1
@@ -164,80 +157,208 @@ main_building;high_bud;medium;full_meal;medium_que;good;Vechniy_Zov
 bus_stop;high_bud;medium;full_meal;medium_que;good;Vechniy_Zov
 """.trimIndent()
 
-    var csvInput by remember { mutableStateOf(csvData) }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DecisionTreeScreen(onBack: () -> Unit) {
+    val tsuBlue = colorResource(id = R.color.tsu_blue_primary)
+    var csvInput by remember { mutableStateOf(DEFAULT_CSV) }
     var rootNode by remember { mutableStateOf<Node?>(null) }
     var currentNode by remember { mutableStateOf<Node?>(null) }
     var path by remember { mutableStateOf(listOf<String>()) }
+    var buildError by remember { mutableStateOf("") }
 
-    Column(modifier = Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
-        if (rootNode == null) {
-            Text("1. Обучение дерева CSV", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            OutlinedTextField(
-                value = csvInput,
-                onValueChange = { csvInput = it },
-                modifier = Modifier.fillMaxWidth().height(500.dp).padding(vertical = 8.dp)
-            )
-            Button(onClick = {
-                val (features, data) = parseCSV(csvInput)
-                rootNode = buildDecisionTree(data, features.toSet())
-                currentNode = rootNode
-            },
-                modifier = Modifier
-                .fillMaxWidth()
-                    .height(60.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorResource(id = R.color.tsu_blue_primary)
-                ),
-            ) {
-                Text("Построить дерево решений", fontSize = 20.sp
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Дерево решений", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Назад",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = tsuBlue
                 )
-            }
-        } else {
-            Text("2. Выбор места", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(16.dp))
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (rootNode == null) {
+                Text(
+                    "Шаг 1: Обучающая выборка (CSV)",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    "Разделитель столбцов — точка с запятой. Последний столбец — рекомендуемое заведение.",
+                    fontSize = 13.sp,
+                    color = Color.Gray
+                )
 
-            val node = currentNode!!
-            if (node.isLeaf) {
-                val englishResult = node.label ?: ""
-                val russianResult = translationMap[englishResult] ?: englishResult
-                Card(colors = CardDefaults.cardColors(containerColor = Color.LightGray)) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("Рекомендуется: $russianResult", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                        Text("Путь: ${path.joinToString(" -> ")}", fontSize = 19.sp)
+                OutlinedTextField(
+                    value = csvInput,
+                    onValueChange = {
+                        csvInput = it
+                        buildError = ""
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(320.dp),
+                    label = { Text("CSV данные") }
+                )
+
+                if (buildError.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEEEE))
+                    ) {
+                        Text(
+                            buildError,
+                            modifier = Modifier.padding(12.dp),
+                            color = Color(0xFFB00020),
+                            fontSize = 13.sp
+                        )
                     }
                 }
-                Button(onClick = {
-                    rootNode = null
-                    path = emptyList()
-                },
+
+                Button(
+                    onClick = {
+                        try {
+                            val (features, data) = parseCSV(csvInput)
+                            if (data.isEmpty()) {
+                                buildError = "Ошибка: данные пусты или формат CSV неверный."
+                                return@Button
+                            }
+                            rootNode = buildDecisionTree(data, features.toSet())
+                            currentNode = rootNode
+                            buildError = ""
+                        } catch (e: Exception) {
+                            buildError = "Ошибка разбора CSV: ${e.message}"
+                        }
+                    },
                     modifier = Modifier
-                    .padding(top = 16.dp)
-                    .height(60.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = colorResource(id = R.color.tsu_blue_primary)
-                    )
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = tsuBlue),
+                    shape = MaterialTheme.shapes.medium
                 ) {
-                    Text("Сбросить", fontSize = 20.sp)
+                    Text("Построить дерево решений", fontSize = 16.sp)
                 }
+
             } else {
-                val englishFeature = node.feature ?: ""
-                val russianQuestion = translationMap[englishFeature] ?: englishFeature
-                Text("Вопрос: $russianQuestion", fontSize = 22.sp)
-                node.branches?.forEach { (englishChoise, next) ->
-                    val russianChoise = translationMap[englishChoise] ?: englishChoise
+                Text(
+                    "Шаг 2: Подбор заведения",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                if (path.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F4FF))
+                    ) {
+                        Text(
+                            "Путь: ${path.joinToString(" → ")}",
+                            modifier = Modifier.padding(12.dp),
+                            fontSize = 13.sp,
+                            color = Color.DarkGray
+                        )
+                    }
+                }
+
+                val node = currentNode!!
+                if (node.isLeaf) {
+                    val englishResult = node.label ?: ""
+                    val russianResult = translationMap[englishResult] ?: englishResult
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Column(Modifier.padding(20.dp)) {
+                            Text(
+                                "Рекомендуется:",
+                                fontSize = 14.sp,
+                                color = Color(0xFF388E3C)
+                            )
+                            Text(
+                                russianResult,
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1B5E20)
+                            )
+                        }
+                    }
 
                     Button(
                         onClick = {
-                            path = path + russianChoise
-                            currentNode = next
+                            rootNode = null
+                            currentNode = null
+                            path = emptyList()
                         },
-                        modifier = Modifier.fillMaxWidth().height(65.dp).padding(top = 8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = colorResource(id = R.color.tsu_blue_primary)
-                        )
-                    ) {Text(
-                        text = russianChoise, fontSize = 20.sp,
-                    )}
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = tsuBlue),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Text("Сбросить", fontSize = 16.sp)
+                    }
+
+                } else {
+                    val englishFeature = node.feature ?: ""
+                    val russianQuestion = translationMap[englishFeature] ?: englishFeature
+
+                    Text(
+                        russianQuestion,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    node.branches?.forEach { (englishChoice, next) ->
+                        val russianChoice = translationMap[englishChoice] ?: englishChoice
+                        Button(
+                            onClick = {
+                                path = path + russianChoice
+                                currentNode = next
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = tsuBlue),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Text(russianChoice, fontSize = 16.sp)
+                        }
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            rootNode = null
+                            currentNode = null
+                            path = emptyList()
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Text("← Изменить данные CSV", color = tsuBlue)
+                    }
                 }
             }
         }
