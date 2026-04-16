@@ -28,6 +28,8 @@ import com.example.tsumaps.ui.theme.TSUMapsTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 class GeneticAlgorithmActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,34 +41,57 @@ class GeneticAlgorithmActivity : ComponentActivity() {
         }
     }
 }
-val allFoodItems = listOf(
-    "Блины", "Кофе", "Шаурма", "Бизнес-ланч", "Пицца",
-    "Салат", "Сок", "Бургер", "Суп", "Чай"
+
+val breakfastItems = listOf("Кофе", "Чай", "Блины", "Пирожное", "Сырники", "Булочка")
+
+val lunchItems = listOf(
+    "Кофе", "Чай", "Газировка", "Сок", "Компот", "Блины", "Пирожное", "Сырники",
+    "Хот дог", "Сэндвич", "Суп", "Салат", "Гарнир с мясом", "Бизнес ланч",
+    "Шаурма", "Картошка фри", "Батончик", "Булочка", "Наггетсы", "Бургер", "Пласт. посуда"
+)
+
+val dinnerItems = listOf(
+    "Чай", "Газировка", "Сок", "Компот", "Блины", "Пирожное", "Сырники",
+    "Хот дог", "Сэндвич", "Суп", "Салат", "Гарнир с мясом", "Шаурма",
+    "Картошка фри", "Батончик", "Булочка", "Наггетсы", "Бургер", "Пластиковая посуда"
 )
 
 val allPlaces = listOf(
-    Place("Сибирские блины",  1, 420, 310, listOf("Блины", "Чай"),                   480, 1320),
-    Place("Старбукс (главный)", 2, 390, 280, listOf("Кофе", "Чай"),                  480, 1320),
-    Place("Столовая №1",      3, 460, 340, listOf("Бизнес-ланч", "Суп", "Салат"),    480, 1320),
-    Place("Кафе Минутка",     4, 430, 320, listOf("Бизнес-ланч", "Салат", "Сок"),    480, 1320),
-    Place("Безумно",          5, 500, 360, listOf("Шаурма", "Сок"),                  600, 1380),
-    Place("Абрикос",          6, 480, 350, listOf("Бизнес-ланч", "Сок", "Чай"),      480, 1320),
-    Place("Rostic's",         7, 550, 380, listOf("Бургер", "Кофе", "Сок"),          600, 1380),
-    Place("Ярче",             8, 410, 300, listOf("Салат", "Сок", "Чай", "Пицца"),   480, 1320),
-    Place("Гастроном НАШ",    9, 460, 330, listOf("Салат", "Сок", "Пицца"),          480, 1380),
-    Place("Пекарня XO",      10, 400, 290, listOf("Кофе", "Чай", "Бизнес-ланч"),     480, 1320)
+    Place("Сибирские блины",  1, 420, 310, listOf("Блины", "Кофе", "Чай", "Газировка"), 480, 1320),
+    Place("Старбукс (главный)", 2, 390, 280, listOf("Кофе", "Чай", "Пирожное", "Сырники", "Хот дог", "Сэндвич"), 480, 1320),
+    Place("Столовая №1",      3, 460, 340, listOf("Суп", "Салат", "Чай", "Гарнир с мясом", "Компот"), 480, 1320),
+    Place("Кафе Минутка",     4, 430, 320, listOf("Бизнес ланч", "Салат", "Суп", "Гарнир с мясом", "Компот"), 480, 1320),
+    Place("Безумно",          5, 500, 360, listOf("Шаурма", "Сок", "Газировка", "Картошка фри"), 600, 1380),
+    Place("Абрикос",          6, 480, 350, listOf("Сок", "Газировка", "Салат", "Батончик", "Булочка"), 480, 1320),
+    Place("Rostic's",         7, 550, 380, listOf("Бургер", "Кофе", "Газировка", "Картошка фри", "Наггетсы"), 600, 1380),
+    Place("Ярче",             8, 410, 300, listOf("Сок", "Газировка", "Батончик", "Булочка", "Пластиковая посуда"), 480, 1320),
+    Place("Гастроном НАШ",    9, 460, 330, listOf("Пластиковая посуда", "Булочка", "Батончик", "Газировка", "Сок"), 480, 1380),
+    Place("Пекарня XO",      10, 400, 290, listOf("Чай", "Кофе", "Булочка"), 480, 1320)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GeneticAlgorithmScreen(onBack: () -> Unit) {
     val tsuBlue = colorResource(id = R.color.tsu_blue_primary)
+    var selectedMealType by remember { mutableStateOf("Обед") }
     val selectedFood = remember { mutableStateListOf<String>() }
     var bestIndividual by remember { mutableStateOf<Individual?>(null) }
     var isRunning by remember { mutableStateOf(false) }
     var currentGeneration by remember { mutableStateOf(0) }
     var statusText by remember { mutableStateOf("Выберите блюда и нажмите «Запустить»") }
     val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
+
+    val currentAvailableMenu = when (selectedMealType) {
+        "Завтрак" -> breakfastItems
+        "Ужин" -> dinnerItems
+        else -> lunchItems
+    }
+
+    LaunchedEffect(selectedMealType) {
+        selectedFood.clear()
+        bestIndividual = null
+    }
 
     Scaffold(
         topBar = {
@@ -85,13 +110,27 @@ fun GeneticAlgorithmScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        ){
+            Text("Выберите прием пищи:", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Завтрак", "Обед", "Ужин").forEach { type ->
+                    ElevatedFilterChip(
+                        selected = selectedMealType == type,
+                        onClick = { selectedMealType = type },
+                        label = { Text(type) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
 
-            Text("Что хотите съесть?", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            HorizontalDivider()
+
+            Text("Что хотите съесть? ($selectedMealType)", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             FoodSelector(
-                allItems = allFoodItems,
+                allItems = currentAvailableMenu,
                 selected = selectedFood,
                 onToggle = { item ->
                     if (selectedFood.contains(item)) selectedFood.remove(item)
@@ -113,17 +152,34 @@ fun GeneticAlgorithmScreen(onBack: () -> Unit) {
                             modifier = Modifier.fillMaxWidth(),
                             color = tsuBlue
                         )
-                        Text("Поколение: $currentGeneration", fontSize = 12.sp, color = Color.Gray)
                     }
                 }
             }
 
             bestIndividual?.let { ind ->
                 Text("Лучший маршрут:", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Text("Расстояние: ~${ind.totalDistance} м", fontSize = 14.sp, color = Color.Gray)
-                LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(ind.path) { place ->
-                        RouteStopCard(place = place, tsuBlue = tsuBlue)
+                if (ind.finalRoute.isEmpty() && !isRunning) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)) // Светло-красный
+                    ) {
+                        Text(
+                            text = "Ни одно заведение с выбранными блюдами сейчас не работает",
+                            modifier = Modifier.padding(16.dp),
+                            color = Color(0xFFC62828),
+                            fontSize = 14.sp
+                        )
+                    }
+                }
+                else {
+                    Text("Расстояние: ~${ind.totalDistance} м", fontSize = 14.sp, color = Color.Gray)
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        ind.finalRoute.forEach { place ->
+                            RouteStopCard(place = place, tsuBlue = tsuBlue)
+                        }
                     }
                 }
             } ?: Spacer(Modifier.weight(1f))
@@ -140,6 +196,10 @@ fun GeneticAlgorithmScreen(onBack: () -> Unit) {
                     statusText = "Алгоритм работает..."
 
                     coroutineScope.launch {
+//                        val calendar = java.util.Calendar.getInstance()
+//                        val currentMinutes = calendar.get(java.util.Calendar.HOUR_OF_DAY) * 60 + calendar.get(java.util.Calendar.MINUTE)
+                        val currentMinutes = 800
+
                         val result = withContext(Dispatchers.Default) {
                             val ga = GeneticAlgorithm(
                                 allPlaces = allPlaces,
@@ -152,7 +212,7 @@ fun GeneticAlgorithmScreen(onBack: () -> Unit) {
 
                             var best: Individual? = null
                             for (batch in 0 until 10) {
-                                best = ga.execute(10)
+                                best = ga.execute(10, currentMinutes)
                                 withContext(Dispatchers.Main) {
                                     currentGeneration = (batch + 1) * 10
                                     bestIndividual = best
@@ -161,7 +221,11 @@ fun GeneticAlgorithmScreen(onBack: () -> Unit) {
                             best
                         }
                         isRunning = false
-                        statusText = "Готово! Найден оптимальный маршрут."
+                        if (result?.finalRoute?.isEmpty() == true) {
+                            statusText = "Маршрут не найден: все подходящие места закрыты."
+                        } else {
+                            statusText = "Готово! Найден оптимальный маршрут."
+                        }
                         bestIndividual = result
                     }
                 },
@@ -247,6 +311,7 @@ fun RouteStopCard(place: com.example.tsumaps.algorithms.genetic.Place, tsuBlue: 
             Spacer(Modifier.width(12.dp))
             Column {
                 Text(place.name, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                Text("Закрывается в: ${formatTime(place.closeTime)}", fontSize = 12.sp, color = Color.Red)
                 Text(
                     "Меню: ${place.menu.joinToString(", ")}",
                     fontSize = 12.sp,
@@ -255,4 +320,10 @@ fun RouteStopCard(place: com.example.tsumaps.algorithms.genetic.Place, tsuBlue: 
             }
         }
     }
+}
+
+fun formatTime(minutes: Int): String {
+    val h = minutes / 60
+    val m = minutes % 60
+    return String.format("%02d:%02d", h, m)
 }

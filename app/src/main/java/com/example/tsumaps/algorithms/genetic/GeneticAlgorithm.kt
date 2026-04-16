@@ -23,11 +23,11 @@ class GeneticAlgorithm (
         }
     }
 
-    fun execute(generations: Int): Individual
+    fun execute(generations: Int, currentTime: Int): Individual
     {
         for (g in 0 until generations)
         {
-            population.forEach { it.calculateFitness(startX, startY, 720, neededFood)
+            population.forEach { it.calculateFitness(startX, startY, currentTime, neededFood)
             }
 
             population.sortByDescending { it.score }
@@ -53,8 +53,7 @@ class GeneticAlgorithm (
             }
             population = nextGeneration
         }
-
-        return population.maxByOrNull { it.score } ?: population[0]
+        return population[0]
     }
 
     private fun selectParent(): Individual {
