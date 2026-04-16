@@ -166,6 +166,7 @@ fun DecisionTreeScreen(onBack: () -> Unit) {
     var currentNode by remember { mutableStateOf<Node?>(null) }
     var path by remember { mutableStateOf(listOf<String>()) }
     var buildError by remember { mutableStateOf("") }
+    var showFullTree by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -257,107 +258,149 @@ fun DecisionTreeScreen(onBack: () -> Unit) {
                 }
 
             } else {
-                Text(
-                    "Шаг 2: Подбор заведения",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("Работа с деревом в формате:", fontSize = 18.sp, fontWeight = FontWeight.Bold)
 
-                if (path.isNotEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F4FF))
-                    ) {
-                        Text(
-                            "Путь: ${path.joinToString(" → ")}",
-                            modifier = Modifier.padding(12.dp),
-                            fontSize = 13.sp,
-                            color = Color.DarkGray
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                    Button(
+                        onClick = { showFullTree = false },
+                        modifier = Modifier.weight(1f).padding(end = 4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (!showFullTree) colorResource(id = R.color.tsu_blue_primary) else Color.Gray
                         )
-                    }
+                    ) { Text("Вопрос-ответ") }
+
+                    Button(
+                        onClick = { showFullTree = true },
+                        modifier = Modifier.weight(1f).padding(start = 4.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (showFullTree) colorResource(id = R.color.tsu_blue_primary) else Color.Gray
+                        )
+                    ) { Text("Структура дерева") }
                 }
 
-                val node = currentNode!!
-                if (node.isLeaf) {
-                    val englishResult = node.label ?: ""
-                    val russianResult = translationMap[englishResult] ?: englishResult
-
+                if (showFullTree) {
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
-                        shape = MaterialTheme.shapes.medium
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
                     ) {
-                        Column(Modifier.padding(20.dp)) {
-                            Text(
-                                "Рекомендуется:",
-                                fontSize = 14.sp,
-                                color = Color(0xFF388E3C)
+                        val treeStructure =
+                            com.example.tsumaps.algorithms.Decision_tree.printTreeRecursive(
+                                rootNode!!,
+                                "",
+                                translationMap
                             )
+                        Text(
+                            text = treeStructure,
+                            modifier = Modifier.padding(16.dp),
+                            fontSize = 16.sp,
+                            lineHeight = 19.sp
+                        )
+                    }
+                } else {
+                    Text(
+                        "Шаг 2: Подбор заведения",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    if (path.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F4FF))
+                        ) {
                             Text(
-                                russianResult,
-                                fontSize = 24.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1B5E20)
+                                "Путь: ${path.joinToString(" -> ")}",
+                                modifier = Modifier.padding(12.dp),
+                                fontSize = 13.sp,
+                                color = Color.DarkGray
                             )
                         }
                     }
 
-                    Button(
-                        onClick = {
-                            rootNode = null
-                            currentNode = null
-                            path = emptyList()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = tsuBlue),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Text("Сбросить", fontSize = 16.sp)
-                    }
+                    val node = currentNode!!
+                    if (node.isLeaf) {
+                        val englishResult = node.label ?: ""
+                        val russianResult = translationMap[englishResult] ?: englishResult
 
-                } else {
-                    val englishFeature = node.feature ?: ""
-                    val russianQuestion = translationMap[englishFeature] ?: englishFeature
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Column(Modifier.padding(20.dp)) {
+                                Text(
+                                    "Рекомендуется:",
+                                    fontSize = 14.sp,
+                                    color = Color(0xFF388E3C)
+                                )
+                                Text(
+                                    russianResult,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1B5E20)
+                                )
+                            }
+                        }
 
-                    Text(
-                        russianQuestion,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    node.branches?.forEach { (englishChoice, next) ->
-                        val russianChoice = translationMap[englishChoice] ?: englishChoice
                         Button(
                             onClick = {
-                                path = path + russianChoice
-                                currentNode = next
+                                rootNode = null
+                                currentNode = null
+                                path = emptyList()
+                                showFullTree = false
+                            },
+                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp).height(50.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Red.copy(
+                                    alpha = 0.7f
+                                )
+                            )
+                        ) {
+                            Text("Сбросить", fontSize = 16.sp)
+                        }
+
+                    } else {
+                        val englishFeature = node.feature ?: ""
+                        val russianQuestion = translationMap[englishFeature] ?: englishFeature
+
+                        Text(
+                            russianQuestion,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+
+                        node.branches?.forEach { (englishChoice, next) ->
+                            val russianChoice = translationMap[englishChoice] ?: englishChoice
+                            Button(
+                                onClick = {
+                                    path = path + russianChoice
+                                    currentNode = next
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = tsuBlue),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Text(russianChoice, fontSize = 16.sp)
+                            }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = {
+                                rootNode = null
+                                currentNode = null
+                                path = emptyList()
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = tsuBlue),
+                                .height(48.dp),
                             shape = MaterialTheme.shapes.medium
                         ) {
-                            Text(russianChoice, fontSize = 16.sp)
+                            Text("Изменить данные CSV", color = tsuBlue)
                         }
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    OutlinedButton(
-                        onClick = {
-                            rootNode = null
-                            currentNode = null
-                            path = emptyList()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Text("← Изменить данные CSV", color = tsuBlue)
                     }
                 }
             }

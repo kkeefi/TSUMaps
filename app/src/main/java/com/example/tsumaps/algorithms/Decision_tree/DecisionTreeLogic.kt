@@ -34,8 +34,7 @@ fun calculateInformationGain(data: List<DataRecord>, feature: String): Double {
     }
     return totalEntropy - weightedEntropy
 }
-
-fun buildDecisionTree(data: List<DataRecord>, features: Set<String>): Node {
+fun buildDecisionTree(data: List<DataRecord>, features: Set<String>, minGain: Double = 0.01): Node {
     val labels = data.map { it.label }.distinct()
     if (labels.size == 1) return Node(label = labels[0], isLeaf = true)
     if (features.isEmpty()) {
@@ -43,6 +42,12 @@ fun buildDecisionTree(data: List<DataRecord>, features: Set<String>): Node {
         return Node(label = mostCommonLabel, isLeaf = true)
     }
     val bestFeature = features.maxByOrNull { calculateInformationGain(data, it) } ?: features.first()
+
+     val gain = calculateInformationGain(data, bestFeature)
+    if (gain < minGain) {
+        val mostCommonLabel = data.groupBy { it.label }.maxByOrNull { it.value.size }?.key
+        return Node(label = mostCommonLabel, isLeaf = true)
+    }
     val branches = data.groupBy { it.features[bestFeature] ?: "unknown" }
         .mapValues { entry ->
             buildDecisionTree(entry.value, features - bestFeature)
@@ -60,4 +65,21 @@ fun parseCSV(text: String): Pair<List<String>, List<DataRecord>> {
         DataRecord(featureMap, values.last())
     }
     return featureNames to data
+}
+
+fun printTreeRecursive(node: Node, indent: String = "", translation: Map<String, String>): String {
+    if (node.isLeaf) {
+        val label = translation[node.label] ?: node.label
+        return "$indent  > Рекомендуем: $label\n"
+    }
+
+    val featureName = translation[node.feature] ?: node.feature
+    var result = "$indent $featureName\n"
+
+    node.branches?.forEach { (value, child) ->
+        val valueName = translation[value] ?: value
+        result += "$indent  └─ $valueName\n"
+        result += printTreeRecursive(child, "$indent   |", translation)
+    }
+    return result
 }
