@@ -1,80 +1,66 @@
 package com.example.tsumaps.algorithms.neural
 
 import android.content.Context
-import org.json.JSONObject
 import kotlin.math.exp
-import kotlin.math.ln
-import kotlin.math.sqrt
 
 class NeuralNetwork {
-
-    private var inputSize = 2500
-    private var hiddenSize = 128
-    private var outputSize = 10
-
-    private var w1: Array<DoubleArray> = emptyArray()
-    private var b1: DoubleArray = DoubleArray(0)
-    private var w2: Array<DoubleArray> = emptyArray()
-    private var b2: DoubleArray = DoubleArray(0)
-
     private var loaded = false
+    private lateinit var w1: Array<DoubleArray>
+    private lateinit var b1: DoubleArray
+    private lateinit var w2: Array<DoubleArray>
+    private lateinit var b2: DoubleArray
+    private lateinit var w3: Array<DoubleArray>
+    private lateinit var b3: DoubleArray
 
     fun loadWeights(context: Context) {
-        val json = context.assets.open("weights.json").bufferedReader().use { it.readText() }
-        val obj = JSONObject(json)
+        try {
+            val text = context.assets.open("weights.json").bufferedReader().use { it.readText() }
+            val numbers = text.split(" ").filter { it.isNotEmpty() }.map { it.toDouble() }
+            var cursor = 0
 
-        inputSize = obj.getInt("input_size")
-        hiddenSize = obj.getInt("hidden_size")
-        outputSize = obj.getInt("output_size")
+            w1 = Array(128) { DoubleArray(2500) }
+            for (i in 0 until 128) for (j in 0 until 2500) w1[i][j] = numbers[cursor++]
+            b1 = DoubleArray(128) { numbers[cursor++] }
 
-        val jsonW1 = obj.getJSONArray("w1")
-        w1 = Array(hiddenSize) { i ->
-            val row = jsonW1.getJSONArray(i)
-            DoubleArray(inputSize) { j -> row.getDouble(j) }
-        }
+            w2 = Array(64) { DoubleArray(128) }
+            for (i in 0 until 64) for (j in 0 until 128) w2[i][j] = numbers[cursor++]
+            b2 = DoubleArray(64) { numbers[cursor++] }
 
-        val jsonB1 = obj.getJSONArray("b1")
-        b1 = DoubleArray(hiddenSize) { i -> jsonB1.getDouble(i) }
+            w3 = Array(10) { DoubleArray(64) }
+            for (i in 0 until 10) for (j in 0 until 64) w3[i][j] = numbers[cursor++]
+            b3 = DoubleArray(10) { numbers[cursor++] }
 
-        val jsonW2 = obj.getJSONArray("w2")
-        w2 = Array(outputSize) { i ->
-            val row = jsonW2.getJSONArray(i)
-            DoubleArray(hiddenSize) { j -> row.getDouble(j) }
-        }
-
-        val jsonB2 = obj.getJSONArray("b2")
-        b2 = DoubleArray(outputSize) { i -> jsonB2.getDouble(i) }
-
-        loaded = true
+            loaded = true
+        } catch (e: Exception) { e.printStackTrace() }
     }
 
-    fun predict(pixels: List<Float>): Pair<Int, Float> {
-        if (!loaded) return Pair(0, 0f)
+    fun predict(input: DoubleArray): Pair<Int, Double> {
+        if (!loaded) return Pair(-1, 0.0)
 
-        val input = DoubleArray(pixels.size) { pixels[it].toDouble() }
-
-        val hidden = DoubleArray(hiddenSize) { i ->
-            var sum = b1[i]
-            for (j in input.indices) {
-                sum += w1[i][j] * input[j]
-            }
-            if (sum > 0) sum else 0.0
+        val h1 = DoubleArray(128) { i ->
+            var s = b1[i]
+            for (j in 0 until 2500) s += w1[i][j] * input[j]
+            if (s > 0) s else 0.0
         }
 
-        val output = DoubleArray(outputSize) { i ->
-            var sum = b2[i]
-            for (j in hidden.indices) {
-                sum += w2[i][j] * hidden[j]
-            }
-            sum
+        val h2 = DoubleArray(64) { i ->
+            var s = b2[i]
+            for (j in 0 until 128) s += w2[i][j] * h1[j]
+            if (s > 0) s else 0.0
         }
 
-        val maxVal = output.max()
-        val exps = DoubleArray(outputSize) { exp(output[it] - maxVal) }
-        val total = exps.sum()
-        val probs = DoubleArray(outputSize) { exps[it] / total }
+        val out = DoubleArray(10) { i ->
+            var s = b3[i]
+            for (j in 0 until 64) s += w3[i][j] * h2[j]
+            s
+        }
 
-        val predicted = probs.indices.maxByOrNull { probs[it] } ?: 0
-        return Pair(predicted, probs[predicted].toFloat())
+        val maxVal = out.maxOrNull() ?: 0.0
+        val exps = out.map { exp(it - maxVal) }
+        val sumExps = exps.sum()
+        val probs = exps.map { it / sumExps }
+
+        val bestDigit = probs.indices.maxByOrNull { probs[it] } ?: 0
+        return Pair(bestDigit, probs[bestDigit])
     }
 }
