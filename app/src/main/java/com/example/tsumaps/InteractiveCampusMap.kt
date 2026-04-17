@@ -25,9 +25,10 @@ fun InteractiveCampusMap(
     endPoint: Offset? = null,
     gridWidth: Int = 100,
     gridHeight: Int = 100,
+    initialScale: Float = 1f,
     onMapClick: (Offset) -> Unit
 ) {
-    var scale by remember { mutableFloatStateOf(1f) }
+    var scale by remember { mutableFloatStateOf(initialScale) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
     Canvas(
@@ -37,14 +38,11 @@ fun InteractiveCampusMap(
             .pointerInput(Unit) {
                 detectTransformGestures { centroid, pan, zoom, _ ->
                     val oldScale = scale
-                    val newScale = (scale * zoom).coerceIn(1f, 10f)
-
+                    val newScale = (scale * zoom).coerceIn(0.3f, 10f)
                     val newOffset = (offset + pan) * (newScale / oldScale) -
                             centroid * (newScale / oldScale - 1f)
-
                     val limitX = (mapImage.width * newScale - size.width).coerceAtLeast(0f)
                     val limitY = (mapImage.height * newScale - size.height).coerceAtLeast(0f)
-
                     offset = Offset(
                         x = newOffset.x.coerceIn(-limitX, 0f),
                         y = newOffset.y.coerceIn(-limitY, 0f)
@@ -56,7 +54,6 @@ fun InteractiveCampusMap(
                 detectTapGestures { tapOffset ->
                     val imgX = (tapOffset.x - offset.x) / scale
                     val imgY = (tapOffset.y - offset.y) / scale
-
                     if (imgX in 0f..mapImage.width.toFloat() && imgY in 0f..mapImage.height.toFloat()) {
                         onMapClick(Offset(imgX, imgY))
                     }
@@ -69,13 +66,11 @@ fun InteractiveCampusMap(
         }) {
             drawImage(image = mapImage)
 
-
             path?.let { p ->
                 if (p.isNotEmpty() && gridWidth > 0) {
                     val drawPath = Path()
                     val cellW = mapImage.width.toFloat() / gridWidth
                     val cellH = mapImage.height.toFloat() / gridHeight
-
                     for (i in p.indices) {
                         val px = p[i][0] * cellW + (cellW / 2f)
                         val py = p[i][1] * cellH + (cellH / 2f)
@@ -94,7 +89,9 @@ fun InteractiveCampusMap(
 
             kmeansPoints.forEach { kp ->
                 val color = when (kp.clusterNumber) {
-                    0 -> Color.Blue; 1 -> Color.Magenta; 2 -> Color.Cyan
+                    0 -> Color.Blue
+                    1 -> Color.Magenta
+                    2 -> Color.Cyan
                     else -> Color.Gray
                 }
                 drawCircle(color, 12f / scale, Offset(kp.x.toFloat(), kp.y.toFloat()))

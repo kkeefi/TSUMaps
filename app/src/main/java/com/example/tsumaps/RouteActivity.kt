@@ -21,73 +21,82 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class RouteActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             TSUMapsTheme {
-                val context = LocalContext.current
-                var startPoint by remember { mutableStateOf<Offset?>(null) }
-                var endPoint by remember { mutableStateOf<Offset?>(null) }
-                var path by remember { mutableStateOf<List<IntArray>?>(null) }
+                RouteScreen(onBack = { finish() })
+            }
+        }
+    }
+}
 
-                var matrixSize by remember { mutableStateOf(Pair(0, 0)) }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RouteScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+    var startPoint by remember { mutableStateOf<Offset?>(null) }
+    var endPoint by remember { mutableStateOf<Offset?>(null) }
+    var path by remember { mutableStateOf<List<IntArray>?>(null) }
+    var matrixSize by remember { mutableStateOf(Pair(0, 0)) }
+    val mapImage = ImageBitmap.imageResource(id = R.drawable.tsu_map_photo)
+    val coroutineScope = rememberCoroutineScope()
 
-                val mapImage = ImageBitmap.imageResource(id = R.drawable.tsu_map_photo)
-                val coroutineScope = rememberCoroutineScope()
-
-                Column(modifier = Modifier.fillMaxSize()) {
-                    TopAppBar(
-                        title = { Text("A* Навигация по JSON", color = Color.White) },
-                        navigationIcon = {
-                            IconButton(onClick = { finish() }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад", tint = Color.White)
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = colorResource(id = R.color.tsu_blue_primary))
-                    )
-
-                    Box(modifier = Modifier.weight(1f)) {
-                        InteractiveCampusMap(
-                            mapImage = mapImage,
-                            startPoint = startPoint,
-                            endPoint = endPoint,
-                            path = path,
-                            gridWidth = matrixSize.first,
-                            gridHeight = matrixSize.second,
-                            onMapClick = { clickedOffset ->
-                                if (startPoint == null) {
-                                    startPoint = clickedOffset
-                                } else if (endPoint == null) {
-                                    endPoint = clickedOffset
-
-                                    coroutineScope.launch(Dispatchers.Default) {
-                                        val matrix = MapDataLoader.loadMatrix(context, "map_matrix.json")
-                                        matrixSize = Pair(matrix[0].size, matrix.size)
-
-                                        val aStar = AStar(matrix)
-                                        val startX = (startPoint!!.x * matrixSize.first / mapImage.width).toInt()
-                                        val startY = (startPoint!!.y * matrixSize.second / mapImage.height).toInt()
-                                        val endX = (endPoint!!.x * matrixSize.first / mapImage.width).toInt()
-                                        val endY = (endPoint!!.y * matrixSize.second / mapImage.height).toInt()
-
-                                        path = aStar.findPath(
-                                            startX.coerceIn(0, matrixSize.first - 1),
-                                            startY.coerceIn(0, matrixSize.second - 1),
-                                            endX.coerceIn(0, matrixSize.first - 1),
-                                            endY.coerceIn(0, matrixSize.second - 1)
-                                        )
-                                    }
-                                } else {
-                                    startPoint = clickedOffset
-                                    endPoint = null
-                                    path = null
-                                }
-                            }
-                        )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("A* Навигация по карте", color = Color.White) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = colorResource(id = R.color.tsu_blue_primary)
+                )
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            InteractiveCampusMap(
+                mapImage = mapImage,
+                startPoint = startPoint,
+                endPoint = endPoint,
+                path = path,
+                gridWidth = matrixSize.first,
+                gridHeight = matrixSize.second,
+                initialScale = 0.7f,
+                onMapClick = { clickedOffset ->
+                    if (startPoint == null) {
+                        startPoint = clickedOffset
+                    } else if (endPoint == null) {
+                        endPoint = clickedOffset
+                        coroutineScope.launch(Dispatchers.Default) {
+                            val matrix = MapDataLoader.loadMatrix(context, "map_matrix.json")
+                            matrixSize = Pair(matrix[0].size, matrix.size)
+                            val aStar = AStar(matrix)
+                            val startX = (startPoint!!.x * matrixSize.first / mapImage.width).toInt()
+                            val startY = (startPoint!!.y * matrixSize.second / mapImage.height).toInt()
+                            val endX = (endPoint!!.x * matrixSize.first / mapImage.width).toInt()
+                            val endY = (endPoint!!.y * matrixSize.second / mapImage.height).toInt()
+                            path = aStar.findPath(
+                                startX.coerceIn(0, matrixSize.first - 1),
+                                startY.coerceIn(0, matrixSize.second - 1),
+                                endX.coerceIn(0, matrixSize.first - 1),
+                                endY.coerceIn(0, matrixSize.second - 1)
+                            )
+                        }
+                    } else {
+                        startPoint = clickedOffset
+                        endPoint = null
+                        path = null
                     }
                 }
-            }
+            )
         }
     }
 }

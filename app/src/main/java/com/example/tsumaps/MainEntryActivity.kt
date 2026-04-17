@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,7 +31,8 @@ class MainEntryActivity : ComponentActivity() {
                     onClustersClick     = { startActivity(Intent(this, ClustersActivity::class.java)) },
                     onDecisionTreeClick = { startActivity(Intent(this, DecisionTreeActivity::class.java)) },
                     onGeneticClick      = { startActivity(Intent(this, GeneticAlgorithmActivity::class.java)) },
-                    onNeuralNetClick    = { startActivity(Intent(this, NeuralNetworkActivity::class.java)) },
+                    onAntColonyClick    = { startActivity(Intent(this, AntColonyActivity::class.java)) },
+                    onNeuralNetClick    = { startActivity(Intent(this, NeuralNetworkActivity::class.java)) }
                 )
             }
         }
@@ -46,7 +46,8 @@ fun MainScreen(
     onClustersClick: () -> Unit,
     onDecisionTreeClick: () -> Unit,
     onGeneticClick: () -> Unit,
-    onNeuralNetClick: () -> Unit,
+    onAntColonyClick: () -> Unit,
+    onNeuralNetClick: () -> Unit
 ) {
     val tsuBlue = colorResource(id = R.color.tsu_blue_primary)
 
@@ -58,16 +59,9 @@ fun MainScreen(
                         Image(
                             painter = painterResource(id = R.drawable.tsu_logo),
                             contentDescription = null,
-                            modifier = Modifier
-                                .size(36.dp)
-                                .padding(end = 8.dp)
+                            modifier = Modifier.size(36.dp).padding(end = 8.dp)
                         )
-                        Text(
-                            "ТГУ Навигатор",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 20.sp
-                        )
+                        Text("ТГУ Навигатор", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = tsuBlue)
@@ -82,39 +76,19 @@ fun MainScreen(
                 .padding(horizontal = 16.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-
             SectionLabel("Навигация")
-            AlgoButton(
-                text = "А* — Маршрут по карте",
-                subtitle = "Построить путь между двумя точками",
-                onClick = onRouteClick
-            )
+            AlgoButton("А* — Маршрут по карте", "Построить путь между двумя точками", onRouteClick)
 
             SectionLabel("Анализ данных")
-            AlgoButton(
-                text = "K-Means — Кластеры",
-                subtitle = "Расставить точки и найти кластеры",
-                onClick = onClustersClick
-            )
-            AlgoButton(
-                text = "Дерево решений",
-                subtitle = "Подобрать заведение по предпочтениям",
-                onClick = onDecisionTreeClick
-            )
+            AlgoButton("K-Means — Кластеры", "Расставить точки и найти кластеры", onClustersClick)
+            AlgoButton("Дерево решений", "Подобрать заведение по предпочтениям", onDecisionTreeClick)
 
             SectionLabel("Оптимизация маршрута")
-            AlgoButton(
-                text = "Генетический алгоритм",
-                subtitle = "Маршрут для покупки нескольких блюд",
-                onClick = onGeneticClick
-            )
+            AlgoButton("Генетический алгоритм", "Маршрут для покупки нескольких блюд", onGeneticClick)
+            AlgoButton("Муравьиный алгоритм", "Обход достопримечательностей кампуса", onAntColonyClick)
 
             SectionLabel("Оценка заведения")
-            AlgoButton(
-                text = "Нейросеть — распознавание цифры",
-                subtitle = "Нарисуйте оценку от 0 до 9",
-                onClick = onNeuralNetClick
-            )
+            AlgoButton("Нейросеть — распознавание цифры", "Нарисуйте оценку от 0 до 9", onNeuralNetClick)
         }
     }
 }
@@ -136,17 +110,12 @@ fun AlgoButton(text: String, subtitle: String, onClick: () -> Unit) {
     val tsuBlue = colorResource(id = R.color.tsu_blue_primary)
     Button(
         onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(68.dp),
+        modifier = Modifier.fillMaxWidth().height(68.dp),
         colors = ButtonDefaults.buttonColors(containerColor = tsuBlue),
         shape = RoundedCornerShape(12.dp),
         contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.Center
-        ) {
+        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.Center) {
             Text(text = text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
             Text(text = subtitle, fontSize = 12.sp, color = Color.White.copy(alpha = 0.75f))
         }

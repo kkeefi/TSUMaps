@@ -3,9 +3,9 @@ package com.example.tsumaps
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -14,12 +14,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import com.example.tsumaps.algorithms.neural.NeuralNetwork
 import com.example.tsumaps.ui.theme.TSUMapsTheme
 
@@ -41,13 +47,12 @@ class NeuralNetworkActivity : ComponentActivity() {
 fun NeuralNetworkScreen(onBack: () -> Unit) {
     val tsuBlue = colorResource(id = R.color.tsu_blue_primary)
     val context = LocalContext.current
+
     val pixels = remember { Array(GRID_SIZE) { BooleanArray(GRID_SIZE) { false } } }
     var pixelVersion by remember { mutableStateOf(0) }
-
     var predictedDigit by remember { mutableStateOf<Int?>(null) }
     var confidence by remember { mutableStateOf(0f) }
     var neuralNet by remember { mutableStateOf<NeuralNetwork?>(null) }
-    var isLoaded by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
@@ -55,9 +60,28 @@ fun NeuralNetworkScreen(onBack: () -> Unit) {
             val nn = NeuralNetwork()
             nn.loadWeights(context)
             neuralNet = nn
-            isLoaded = true
         } catch (e: Exception) {
             loadError = "Файл весов не найден. Сначала обучите нейросеть на Python."
+        }
+    }
+
+    fun predict() {
+        neuralNet?.let { nn ->
+            val flat = pixels.flatMap { row -> row.map { if (it) 1f else 0f } }
+            val result = nn.predict(flat)
+            predictedDigit = result.first
+            confidence = result.second
+        }
+    }
+
+    fun paintCell(offset: Offset, canvasSizePx: Float) {
+        val cellSize = canvasSizePx / GRID_SIZE
+        val col = (offset.x / cellSize).toInt()
+        val row = (offset.y / cellSize).toInt()
+        if (row in 0 until GRID_SIZE && col in 0 until GRID_SIZE) {
+            pixels[row][col] = true
+            pixelVersion++
+            predict()
         }
     }
 
@@ -82,45 +106,62 @@ fun NeuralNetworkScreen(onBack: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-
-            Text(
-                "Нарисуйте цифру (оценку от 0 до 9)",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                "Нажимайте на клетки чтобы закрасить или стереть",
-                fontSize = 13.sp,
-                color = Color.Gray
-            )
+            Text("Нарисуйте цифру (оценку от 0 до 9)", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text("Рисуйте пальцем — закрашивает пиксели", fontSize = 13.sp, color = Color.Gray)
 
             if (loadError.isNotEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEEEE))
                 ) {
-                    Text(
-                        loadError,
-                        modifier = Modifier.padding(12.dp),
-                        color = Color(0xFFB00020),
-                        fontSize = 14.sp
-                    )
+                    Text(loadError, modifier = Modifier.padding(12.dp), color = Color(0xFFB00020), fontSize = 14.sp)
                 }
             }
-            PixelGrid(
-                pixels = pixels,
-                pixelVersion = pixelVersion,
-                onPixelClick = { row, col ->
-                    pixels[row][col] = !pixels[row][col]
-                    pixelVersion++
-                    neuralNet?.let { nn ->
-                        val flat = pixels.flatMap { it.map { p -> if (p) 1f else 0f } }
-                        val result = nn.predict(flat)
-                        predictedDigit = result.first
-                        confidence = result.second
+            @Suppress("UnusedBoxWithConstraintsScope")
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
+                    .background(Color.White, RoundedCornerShape(8.dp))
+            ) {
+                val canvasSizePx = constraints.maxWidth.toFloat()
+
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(Unit) {
+                            detectDragGestures { change, _ ->
+                                change.consume()
+                                paintCell(change.position, canvasSizePx)
+                            }
+                        }
+                        .pointerInput(Unit) {
+                            detectTapGestures { offset ->
+                                paintCell(offset, canvasSizePx)
+                            }
+                        }
+                ) {
+                    val dummy = pixelVersion
+                    val cellSize = canvasSizePx / GRID_SIZE
+
+                    for (row in 0 until GRID_SIZE) {
+                        for (col in 0 until GRID_SIZE) {
+                            drawRect(
+                                color = if (pixels[row][col]) Color.Black else Color.White,
+                                topLeft = Offset(col * cellSize, row * cellSize),
+                                size = Size(cellSize, cellSize)
+                            )
+                            drawRect(
+                                color = Color(0xFFDDDDDD),
+                                topLeft = Offset(col * cellSize, row * cellSize),
+                                size = Size(cellSize, cellSize),
+                                style = Stroke(width = 0.3f)
+                            )
+                        }
                     }
                 }
-            )
+            }
 
             if (predictedDigit != null) {
                 Card(
@@ -129,20 +170,13 @@ fun NeuralNetworkScreen(onBack: () -> Unit) {
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column {
                             Text("Распознана цифра:", fontSize = 14.sp, color = Color.Gray)
-                            Text(
-                                "$predictedDigit",
-                                fontSize = 48.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = tsuBlue
-                            )
+                            Text("$predictedDigit", fontSize = 48.sp, fontWeight = FontWeight.Bold, color = tsuBlue)
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             Text("Уверенность:", fontSize = 14.sp, color = Color.Gray)
@@ -158,6 +192,7 @@ fun NeuralNetworkScreen(onBack: () -> Unit) {
             }
 
             Spacer(Modifier.weight(1f))
+
             Button(
                 onClick = {
                     for (r in 0 until GRID_SIZE) {
@@ -168,48 +203,11 @@ fun NeuralNetworkScreen(onBack: () -> Unit) {
                     pixelVersion++
                     predictedDigit = null
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB00020)),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text("Очистить", fontSize = 16.sp, color = Color.White)
-            }
-        }
-    }
-}
-@Suppress("UnusedBoxWithConstraintsScope")
-@Composable
-fun PixelGrid(
-    pixels: Array<BooleanArray>,
-    pixelVersion: Int,
-    onPixelClick: (Int, Int) -> Unit
-) {
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f)
-            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-            .background(Color.White, RoundedCornerShape(8.dp))
-    ) {
-        val cellSize = maxWidth / GRID_SIZE
-
-        Column {
-            for (row in 0 until GRID_SIZE) {
-                Row {
-                    for (col in 0 until GRID_SIZE) {
-                        Box(
-                            modifier = Modifier
-                                .size(cellSize)
-                                .background(
-                                    if (pixels[row][col]) Color.Black else Color.White
-                                )
-                                .border(0.2.dp, Color(0xFFEEEEEE))
-                                .clickable { onPixelClick(row, col) }
-                        )
-                    }
-                }
             }
         }
     }
