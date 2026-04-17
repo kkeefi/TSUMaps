@@ -13,6 +13,7 @@ class Individual(val path: List<Place>) {
     private val missingItemPenalty = 8000.0
     private val closedPlacePenalty = 5000.0
 
+
     fun calculateFitness(startX: Int, startY: Int, currentTime: Int, neededFood: List<String> = emptyList()) {
         val neededNormalized = neededFood.map { it.lowercase().trim() }
         val stillMissingItems = neededNormalized.toMutableList()
@@ -46,6 +47,11 @@ class Individual(val path: List<Place>) {
             }
 
             if (isOpen) {
+                val minutesToClose = place.closeTime - minuteOfDay
+                if (minutesToClose in 0..30) {
+                    penalties += closedPlacePenalty * (1.0 - minutesToClose / 30.0)
+                }
+
                 var boughtHere = false
                 val menuNormalized = place.menu.map { it.lowercase().trim() }
 
