@@ -4,69 +4,109 @@ import java.util.PriorityQueue
 import kotlin.math.abs
 
 class AStar(private val gridMap: Array<IntArray>) {
-    private val map = object {
-        val rows = gridMap.size
-        val cols = gridMap[0].size
 
-        fun isValid(x: Int, y: Int): Boolean {
-            return x in 0 until cols && y in 0 until rows && gridMap[y][x] < 999999
+    private val rows = gridMap.size
+    private val cols = gridMap[0].size
+
+    private fun isValid(x: Int, y: Int): Boolean {
+        return x in 0 until cols && y in 0 until rows && gridMap[y][x] < 999999
+    }
+
+    private fun getWeight(x: Int, y: Int): Int = gridMap[y][x]
+
+    private fun getNeighbors(node: Node): List<Node> {
+        val neighbors = mutableListOf<Node>()
+        val directions = arrayOf(0 to 1, 0 to -1, 1 to 0, -1 to 0)
+        for (dir in directions) {
+            val nx = node.x + dir.first
+            val ny = node.y + dir.second
+            if (isValid(nx, ny)) neighbors.add(Node(nx, ny))
         }
-
-        fun getWeight(x: Int, y: Int): Int = gridMap[y][x]
-
-        fun getNeighbors(node: Node): List<Node> {
-            val neighbors = mutableListOf<Node>()
-            val directions = arrayOf(0 to 1, 0 to -1, 1 to 0, -1 to 0)
-            for (dir in directions) {
-                val newX = node.x + dir.first
-                val newY = node.y + dir.second
-                if (isValid(newX, newY)) neighbors.add(Node(newX, newY))
-            }
-            return neighbors
-        }
+        return neighbors
     }
 
     private fun heuristic(a: Node, b: Node): Int = abs(a.x - b.x) + abs(a.y - b.y)
 
     fun findPath(startX: Int, startY: Int, endX: Int, endY: Int): List<IntArray>? {
-        val searchQueue = PriorityQueue<Node>(compareBy { it.totalCost })
-        val visited = Array(map.rows) { BooleanArray(map.cols) { false } }
+        val queue = PriorityQueue<Node>(compareBy { it.totalCost })
+        val visited = Array(rows) { BooleanArray(cols) }
 
-        val startNode = Node(startX, startY).apply {
+        val start = Node(startX, startY).apply {
             costFromStart = 0
             heuristicValue = heuristic(this, Node(endX, endY))
         }
+        queue.add(start)
 
-        searchQueue.add(startNode)
+        while (queue.isNotEmpty()) {
+            val current = queue.poll() ?: break
+            if (current.x == endX && current.y == endY) return buildPath(current)
+            if (visited[current.y][current.x]) continue
+            visited[current.y][current.x] = true
 
-        while (searchQueue.isNotEmpty()) {
-            val currentNode = searchQueue.poll() ?: break
-
-            if (currentNode.x == endNodeX(endX) && currentNode.y == endNodeY(endY)) {
-                return buildPath(currentNode)
-            }
-
-            if (visited[currentNode.y][currentNode.x]) continue
-            visited[currentNode.y][currentNode.x] = true
-
-            for (nextNode in map.getNeighbors(currentNode)) {
-                if (visited[nextNode.y][nextNode.x]) continue
-
-                val newG = currentNode.costFromStart + map.getWeight(nextNode.x, nextNode.y)
-
-                if (newG < nextNode.costFromStart) {
-                    nextNode.costFromStart = newG
-                    nextNode.heuristicValue = heuristic(nextNode, Node(endX, endY))
-                    nextNode.parent = currentNode
-                    searchQueue.add(nextNode)
+            for (next in getNeighbors(current)) {
+                if (visited[next.y][next.x]) continue
+                val newG = current.costFromStart + getWeight(next.x, next.y)
+                if (newG < next.costFromStart) {
+                    next.costFromStart = newG
+                    next.heuristicValue = heuristic(next, Node(endX, endY))
+                    next.parent = current
+                    queue.add(next)
                 }
             }
         }
         return null
     }
 
-    private fun endNodeX(x: Int) = x
-    private fun endNodeY(y: Int) = y
+    fun findPathAnimated(
+        startX: Int, startY: Int,
+        endX: Int, endY: Int,
+        onStep: (visited: Set<Pair<Int,Int>>, frontier: Set<Pair<Int,Int>>, current: Pair<Int,Int>?) -> Unit
+    ): List<IntArray>? {
+        val queue = PriorityQueue<Node>(compareBy { it.totalCost })
+        val visited = Array(rows) { BooleanArray(cols) }
+        val visitedSet = mutableSetOf<Pair<Int,Int>>()
+        val frontierSet = mutableSetOf<Pair<Int,Int>>()
+
+        val start = Node(startX, startY).apply {
+            costFromStart = 0
+            heuristicValue = heuristic(this, Node(endX, endY))
+        }
+        queue.add(start)
+        frontierSet.add(startX to startY)
+
+        var stepCount = 0
+
+        while (queue.isNotEmpty()) {
+            val current = queue.poll() ?: break
+            if (visited[current.y][current.x]) continue
+            visited[current.y][current.x] = true
+            visitedSet.add(current.x to current.y)
+            frontierSet.remove(current.x to current.y)
+
+            stepCount++
+            if (stepCount % 30 == 0) {
+                onStep(visitedSet.toSet(), frontierSet.toSet(), current.x to current.y)
+            }
+
+            if (current.x == endX && current.y == endY) {
+                onStep(visitedSet.toSet(), frontierSet.toSet(), null)
+                return buildPath(current)
+            }
+
+            for (next in getNeighbors(current)) {
+                if (visited[next.y][next.x]) continue
+                val newG = current.costFromStart + getWeight(next.x, next.y)
+                if (newG < next.costFromStart) {
+                    next.costFromStart = newG
+                    next.heuristicValue = heuristic(next, Node(endX, endY))
+                    next.parent = current
+                    queue.add(next)
+                    frontierSet.add(next.x to next.y)
+                }
+            }
+        }
+        return null
+    }
 
     private fun buildPath(node: Node): List<IntArray> {
         val path = mutableListOf<IntArray>()

@@ -3,6 +3,9 @@ package com.example.tsumaps
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -46,7 +49,7 @@ fun ClustersScreen(onBack: () -> Unit) {
     val baseCoords = remember { mutableStateListOf<Pair<Double, Double>>() }
 
     var euclidPoints by remember { mutableStateOf<List<Point>>(emptyList()) }
-    var manhPoints   by remember { mutableStateOf<List<Point>>(emptyList()) }
+    var manhPoints by remember { mutableStateOf<List<Point>>(emptyList()) }
 
     var view by remember { mutableStateOf(ClusterView.EUCLIDEAN) }
     var disputedCount by remember { mutableStateOf(0) }
@@ -54,7 +57,7 @@ fun ClustersScreen(onBack: () -> Unit) {
     fun recompute() {
         if (baseCoords.size < 3) {
             euclidPoints = baseCoords.map { Point(it.first, it.second) }
-            manhPoints   = baseCoords.map { Point(it.first, it.second) }
+            manhPoints = baseCoords.map { Point(it.first, it.second) }
             disputedCount = 0
             return
         }
@@ -63,7 +66,7 @@ fun ClustersScreen(onBack: () -> Unit) {
         KMeans(3, ep, KMeansMetric.EUCLIDEAN).run()
         KMeans(3, mp, KMeansMetric.MANHATTAN).run()
         euclidPoints = ep
-        manhPoints   = mp
+        manhPoints = mp
         disputedCount = ep.indices.count { ep[it].clusterNumber != mp[it].clusterNumber }
     }
 
@@ -73,10 +76,16 @@ fun ClustersScreen(onBack: () -> Unit) {
                 title = { Text("Кластеризация (K-Means)", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад", tint = Color.White)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Назад",
+                            tint = Color.White
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = tsuBlue)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = tsuBlue
+                )
             )
         },
         bottomBar = {
@@ -91,12 +100,22 @@ fun ClustersScreen(onBack: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        MetricTab("Евклид", view == ClusterView.EUCLIDEAN, tsuBlue,
-                            Modifier.weight(1f)) { view = ClusterView.EUCLIDEAN }
-                        MetricTab("Манхэттен", view == ClusterView.MANHATTAN, tsuBlue,
-                            Modifier.weight(1f)) { view = ClusterView.MANHATTAN }
-                        MetricTab(
-                            label = if (disputedCount > 0) "Сравнение ($disputedCount)" else "Сравнение",
+                        MetricTabButton(
+                            label = "Евклид",
+                            selected = view == ClusterView.EUCLIDEAN,
+                            tsuBlue = tsuBlue,
+                            modifier = Modifier.weight(1f)
+                        ) { view = ClusterView.EUCLIDEAN }
+
+                        MetricTabButton(
+                            label = "Манхэттен",
+                            selected = view == ClusterView.MANHATTAN,
+                            tsuBlue = tsuBlue,
+                            modifier = Modifier.weight(1f)
+                        ) { view = ClusterView.MANHATTAN }
+
+                        MetricTabButton(
+                            label = if (disputedCount > 0) "Сравнение ($disputedCount ⚡)" else "Сравнение",
                             selected = view == ClusterView.COMPARE,
                             tsuBlue = tsuBlue,
                             modifier = Modifier.weight(1f)
@@ -105,57 +124,44 @@ fun ClustersScreen(onBack: () -> Unit) {
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Точек: ${baseCoords.size}" +
-                                    if (baseCoords.size < 3) "  (нужно ≥ 3)" else "",
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Button(
-                            onClick = {
-                                baseCoords.clear()
-                                euclidPoints = emptyList()
-                                manhPoints = emptyList()
-                                disputedCount = 0
+                            text = buildString {
+                                append("Точек: ${baseCoords.size}")
+                                if (baseCoords.size < 3) append("  (нужно ≥ 3)")
+                                else append("  •  3 кластера")
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB00020)),
-                            shape = RoundedCornerShape(10.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp),
-                            modifier = Modifier.height(38.dp)
-                        ) {
-                            Text("Очистить", fontSize = 13.sp)
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+
+                        if (baseCoords.isNotEmpty()) {
+                            TextButton(
+                                onClick = {
+                                    baseCoords.clear()
+                                    euclidPoints = emptyList()
+                                    manhPoints = emptyList()
+                                    disputedCount = 0
+                                },
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) {
+                                Text("Очистить", fontSize = 12.sp, color = Color(0xFFB00020))
+                            }
                         }
                     }
 
                     if (view == ClusterView.COMPARE && baseCoords.size >= 3) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                Modifier
-                                    .size(14.dp)
-                                    .background(Color.White)
-                                    .also {}
-                            )
-                            Surface(
-                                modifier = Modifier.size(14.dp),
-                                shape = RoundedCornerShape(7.dp),
-                                color = Color(0xFF1565C0)
-                            ) {}
-                            Text("= кластер совпадает", fontSize = 11.sp, color = Color.DarkGray)
-                            Spacer(Modifier.width(8.dp))
-                            Surface(
-                                modifier = Modifier.size(18.dp),
-                                shape = RoundedCornerShape(9.dp),
-                                border = ButtonDefaults.outlinedButtonBorder,
-                                color = Color(0xFF1565C0)
-                            ) {}
-                            Text("+ кольцо = расходятся", fontSize = 11.sp, color = Color.DarkGray)
+                            LegendItem(color = Color(0xFF1565C0), label = "Кластер по Евклиду")
+                            if (disputedCount > 0) {
+                                LegendItem(color = Color(0xFFE91E63), label = "⚡ Расходятся ($disputedCount)")
+                            }
                         }
                     }
                 }
@@ -170,14 +176,14 @@ fun ClustersScreen(onBack: () -> Unit) {
             val displayPoints = when (view) {
                 ClusterView.EUCLIDEAN -> euclidPoints
                 ClusterView.MANHATTAN -> manhPoints
-                ClusterView.COMPARE   -> euclidPoints
+                ClusterView.COMPARE -> euclidPoints
             }
-            val comparePointsArg = if (view == ClusterView.COMPARE) manhPoints else emptyList()
+            val compareArg = if (view == ClusterView.COMPARE) manhPoints else emptyList()
 
             InteractiveCampusMap(
                 mapImage = mapImage,
                 kmeansPoints = displayPoints,
-                comparePoints = comparePointsArg,
+                comparePoints = compareArg,
                 showComparison = view == ClusterView.COMPARE,
                 onMapClick = { offset ->
                     baseCoords.add(offset.x.toDouble() to offset.y.toDouble())
@@ -189,23 +195,44 @@ fun ClustersScreen(onBack: () -> Unit) {
 }
 
 @Composable
-private fun MetricTab(
+private fun MetricTabButton(
     label: String,
     selected: Boolean,
     tsuBlue: Color,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
+    val bgColor by animateColorAsState(
+        targetValue = if (selected) tsuBlue else Color(0xFFE0E0E0),
+        animationSpec = tween(200)
+    )
+    val textColor by animateColorAsState(
+        targetValue = if (selected) Color.White else Color.DarkGray,
+        animationSpec = tween(200)
+    )
     Button(
         onClick = onClick,
         modifier = modifier.height(38.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (selected) tsuBlue else Color(0xFFE0E0E0),
-            contentColor = if (selected) Color.White else Color.DarkGray
-        ),
+        colors = ButtonDefaults.buttonColors(containerColor = bgColor, contentColor = textColor),
         shape = RoundedCornerShape(10.dp),
         contentPadding = PaddingValues(horizontal = 4.dp)
     ) {
-        Text(label, fontSize = 12.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal)
+        Text(
+            label,
+            fontSize = 12.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+        )
+    }
+}
+
+@Composable
+private fun LegendItem(color: Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .background(color, RoundedCornerShape(5.dp))
+        )
+        Text(label, fontSize = 11.sp, color = Color.DarkGray)
     }
 }
