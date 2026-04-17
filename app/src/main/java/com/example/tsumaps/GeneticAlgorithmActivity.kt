@@ -55,17 +55,18 @@ val dinnerItems = listOf(
 )
 
 val allPlaces = listOf(
-    Place("Сибирские блины",    1, 420, 310, listOf("Блины", "Кофе", "Чай", "Газировка"),                          480, 1320),
-    Place("Старбукс (главный)", 2, 390, 280, listOf("Кофе", "Чай", "Пирожное", "Сырники", "Хот дог", "Сэндвич"),   480, 1320),
-    Place("Столовая №1",        3, 460, 340, listOf("Суп", "Салат", "Чай", "Гарнир с мясом", "Компот"),             480, 1320),
-    Place("Кафе Минутка",       4, 430, 320, listOf("Бизнес ланч", "Салат", "Суп", "Гарнир с мясом", "Компот"),     480, 1320),
-    Place("Безумно",            5, 500, 360, listOf("Шаурма", "Сок", "Газировка", "Картошка фри"),                  600, 1380),
-    Place("Абрикос",            6, 480, 350, listOf("Сок", "Газировка", "Салат", "Батончик", "Булочка"),             480, 1320),
-    Place("Rostic's",           7, 550, 380, listOf("Бургер", "Кофе", "Газировка", "Картошка фри", "Наггетсы"),     600, 1380),
-    Place("Ярче",               8, 410, 300, listOf("Сок", "Газировка", "Батончик", "Булочка", "Пластиковая посуда"), 480, 1320),
-    Place("Гастроном НАШ",      9, 460, 330, listOf("Пластиковая посуда", "Булочка", "Батончик", "Газировка", "Сок"), 480, 1380),
-    Place("Пекарня XO",        10, 400, 290, listOf("Чай", "Кофе", "Булочка"),                                       480, 1320)
+    Place("Сибирские блины",    1, 36, 28, listOf("Блины", "Кофе", "Чай", "Газировка"),                          480, 1320),
+    Place("Старбукс (главный)", 2, 33, 25, listOf("Кофе", "Чай", "Пирожное", "Сырники", "Хот дог", "Сэндвич"),   480, 1320),
+    Place("Столовая №1",        3, 36, 26, listOf("Суп", "Салат", "Чай", "Гарнир с мясом", "Компот"),             480, 1320),
+    Place("Кафе Минутка",       4, 37, 27, listOf("Бизнес ланч", "Салат", "Суп", "Гарнир с мясом", "Компот"),     480, 1320),
+    Place("Безумно",            5, 2, 4, listOf("Шаурма", "Сок", "Газировка", "Картошка фри"),                  600, 1380),
+    Place("Абрикос",            6, 5, 4, listOf("Сок", "Газировка", "Салат", "Батончик", "Булочка"),             480, 1320),
+    Place("Rostic's",           7, 61, 30, listOf("Бургер", "Кофе", "Газировка", "Картошка фри", "Наггетсы"),     600, 1380),
+    Place("Ярче",               8, 76, 4, listOf("Сок", "Газировка", "Батончик", "Булочка", "Пласт. посуда"), 480, 1320),
+    Place("Гастроном НАШ",      9, 76, 27, listOf("Пласт. посуда", "Булочка", "Батончик", "Газировка", "Сок"), 480, 1380),
+    Place("Пекарня XO",        10, 27, 36, listOf("Чай", "Кофе", "Булочка"),                                       480, 1320)
 )
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -185,22 +186,23 @@ fun GeneticAlgorithmScreen(onBack: () -> Unit) {
                     statusText = "Алгоритм работает..."
 
                     coroutineScope.launch {
-                        val calendar = java.util.Calendar.getInstance()
-                        val currentMinutes = calendar.get(java.util.Calendar.HOUR_OF_DAY) * 60 +
-                                calendar.get(java.util.Calendar.MINUTE)
+//                        val calendar = java.util.Calendar.getInstance()
+//                        val currentMinutes = calendar.get(java.util.Calendar.HOUR_OF_DAY) * 60 +
+//                                calendar.get(java.util.Calendar.MINUTE)
+                        val currentMinutes = 800
 
                         val result = withContext(Dispatchers.Default) {
                             val ga = GeneticAlgorithm(
                                 allPlaces = allPlaces,
                                 neededFood = selectedFood.toList(),
-                                populationSize = 50,
+                                populationSize = 100,
                                 mutationProbability = 0.05,
-                                startX = 450,
-                                startY = 320
+                                startX = 28,
+                                startY = 35
                             )
                             var best: Individual? = null
                             for (batch in 0 until 10) {
-                                best = ga.execute(10, currentMinutes)
+                                best = ga.execute(50, currentMinutes)
                                 withContext(Dispatchers.Main) {
                                     bestIndividual = best
                                 }

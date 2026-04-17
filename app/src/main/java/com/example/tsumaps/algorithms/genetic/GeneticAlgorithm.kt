@@ -11,14 +11,12 @@ class GeneticAlgorithm (
     private val startY: Int
 ) {
     private val suitablePlaces = allPlaces.filter { place ->
-        place.menu.any { item -> neededFood.contains(item) }
+        place.menu.intersect(neededFood.toSet()).isNotEmpty()
     }
     private var population = mutableListOf<Individual>()
 
-    init
-    {
-        for (i in 0 until populationSize)
-        {
+    init {
+        for (i in 0 until populationSize) {
             population.add(Individual(suitablePlaces.shuffled()))
         }
     }
@@ -30,7 +28,7 @@ class GeneticAlgorithm (
             population.forEach { it.calculateFitness(startX, startY, currentTime, neededFood)
             }
 
-            population.sortByDescending { it.score }
+            population.sortBy { it.score }
 
             val nextGeneration = mutableListOf<Individual>()
 
