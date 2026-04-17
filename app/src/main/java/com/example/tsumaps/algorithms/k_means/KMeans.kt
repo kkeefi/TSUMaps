@@ -1,74 +1,47 @@
 package com.example.tsumaps.algorithms.k_means
 
+import kotlin.math.abs
 import kotlin.math.sqrt
 
-class KMeans (val n: Int, val points: List<Point>)
-{
+enum class KMeansMetric { EUCLIDEAN, MANHATTAN }
+
+class KMeans(val n: Int, val points: List<Point>, val metric: KMeansMetric = KMeansMetric.EUCLIDEAN) {
+
     val centroids = ArrayList<Centroid>()
 
-    fun findDistance(p: Point, c: Centroid): Double
-    {
-        val dx = p.x - c.x
-        val dy = p.y - c.y
-        return sqrt(dx * dx + dy * dy)
+    private fun distance(p: Point, c: Centroid): Double = when (metric) {
+        KMeansMetric.EUCLIDEAN -> {
+            val dx = p.x - c.x; val dy = p.y - c.y
+            sqrt(dx * dx + dy * dy)
+        }
+        KMeansMetric.MANHATTAN -> abs(p.x - c.x) + abs(p.y - c.y)
     }
 
-    fun run()
-    {
+    fun run() {
         centroids.clear()
-        for (i in 0 until n)
-        {
-            if (i < points.size)
-            {
-                val p = points[i]
-                centroids.add(Centroid(p.x, p.y))
-            }
+        for (i in 0 until minOf(n, points.size)) {
+            centroids.add(Centroid(points[i].x, points[i].y))
         }
 
         var changed = true
-        while (changed)
-        {
+        while (changed) {
             changed = false
-            for (p in points)
-            {
+            for (p in points) {
                 var minDist = Double.MAX_VALUE
-                var bestClusterIndex = -1
-
-                for (i in 0 until centroids.size)
-                {
-                    val dist = findDistance(p, centroids[i])
-                    if (dist < minDist)
-                    {
-                        minDist = dist
-                        bestClusterIndex = i
-                    }
+                var best = -1
+                for (i in centroids.indices) {
+                    val d = distance(p, centroids[i])
+                    if (d < minDist) { minDist = d; best = i }
                 }
-
-                if (p.clusterNumber != bestClusterIndex)
-                {
-                    p.clusterNumber = bestClusterIndex
-                    changed = true
-                }
+                if (p.clusterNumber != best) { p.clusterNumber = best; changed = true }
             }
 
-            if (changed)
-            {
-                for (i in 0 until centroids.size) {
-                    var sumX = 0.0
-                    var sumY = 0.0
-                    var count = 0
-
-                    for (p in points) {
-                        if (p.clusterNumber == i) {
-                            sumX += p.x
-                            sumY += p.y
-                            count++
-                        }
-                    }
-
-                    if (count > 0) {
-                        centroids[i].x = sumX / count
-                        centroids[i].y = sumY / count
+            if (changed) {
+                for (i in centroids.indices) {
+                    val group = points.filter { it.clusterNumber == i }
+                    if (group.isNotEmpty()) {
+                        centroids[i].x = group.sumOf { it.x } / group.size
+                        centroids[i].y = group.sumOf { it.y } / group.size
                     }
                 }
             }
