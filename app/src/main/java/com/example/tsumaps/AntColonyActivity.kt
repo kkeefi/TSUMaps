@@ -42,16 +42,16 @@ class AntColonyActivity : ComponentActivity() {
 }
 
 val campusAttractions = listOf(
-    AntPlace("Главный корпус ТГУ",    450.0, 320.0),
-    AntPlace("Научная библиотека",     420.0, 290.0),
-    AntPlace("Университетская роща",   500.0, 280.0),
-    AntPlace("Памятник Крылову",       460.0, 310.0),
-    AntPlace("Ботанический сад",       380.0, 350.0),
-    AntPlace("Второй корпус",          490.0, 340.0),
-    AntPlace("Спортивный комплекс",    530.0, 360.0),
-    AntPlace("Студенческий клуб",      440.0, 330.0),
-    AntPlace("Физический факультет",   410.0, 305.0),
-    AntPlace("Химический корпус",      475.0, 355.0)
+    AntPlace("Главный корпус ТГУ",    52.0, 28.0),
+    AntPlace("Научная библиотека",     64.0, 47.0),
+    AntPlace("Университетская роща",   56.0, 25.0),
+    AntPlace("Памятник Крылову и Сергиевской",       46.0, 58.0),
+    AntPlace("Профессор Белкин", 54.0,24.0),
+    AntPlace("Каменные бабы", 54.0, 31.0),
+    AntPlace("Флоринский и Менделеев", 56.0, 31.0),
+    AntPlace("Павшим сотрудникам и студентам ТГУ", 58.0, 36.0),
+    AntPlace("Камень", 64.0, 30.0),
+    AntPlace("Г.Н. Потанин", 63.0, 34.0)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -197,14 +197,16 @@ fun AntColonyScreen(onBack: () -> Unit) {
                         val distRef = AtomicReference(0.0)
 
                         val result = withContext(Dispatchers.Default) {
-                            val colony = AntColony(places = selected.toList())
+                            val startPoint = AntPlace("Второй корпус", 28.0, 35.0)
+                            val pointsToVisit = listOf(startPoint) + selected.toList()
+                            val colony = AntColony(places = pointsToVisit)
                             colony.run { iter, dist ->
                                 iterCounter.set(iter)
                                 distRef.set(dist)
                             }
                         }
 
-                        bestRoute = result
+                        bestRoute = result.drop(1)
                         bestDistance = distRef.get()
                         iteration = iterCounter.get()
                         isRunning = false

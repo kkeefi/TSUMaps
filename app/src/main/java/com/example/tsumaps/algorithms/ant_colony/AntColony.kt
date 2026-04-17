@@ -40,7 +40,7 @@ class AntColony(
     private fun buildRoute(): List<Int> {
         val visited = BooleanArray(n) { false }
         val route = mutableListOf<Int>()
-        var current = (0 until n).random()
+        var current = 0
         visited[current] = true
         route.add(current)
 
