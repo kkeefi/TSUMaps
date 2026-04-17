@@ -14,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -203,7 +204,12 @@ fun RouteScreen(onBack: () -> Unit) {
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
             )
 
-            Box(modifier = Modifier.weight(1f)) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clipToBounds()
+            ) {
                 InteractiveCampusMap(
                     mapImage = mapImage,
                     startPoint = startPoint,
