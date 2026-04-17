@@ -27,6 +27,8 @@ import com.example.tsumaps.ui.theme.TSUMapsTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 class AntColonyActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,16 +42,16 @@ class AntColonyActivity : ComponentActivity() {
 }
 
 val campusAttractions = listOf(
-    AntPlace("Главный корпус ТГУ",        450.0, 320.0),
-    AntPlace("Научная библиотека",         420.0, 290.0),
-    AntPlace("Университетская роща",       500.0, 280.0),
-    AntPlace("Памятник Крылову",           460.0, 310.0),
-    AntPlace("Ботанический сад",           380.0, 350.0),
-    AntPlace("Второй корпус",              490.0, 340.0),
-    AntPlace("Спортивный комплекс",        530.0, 360.0),
-    AntPlace("Студенческий клуб",          440.0, 330.0),
-    AntPlace("Физический факультет",       410.0, 305.0),
-    AntPlace("Химический корпус",          475.0, 355.0)
+    AntPlace("Главный корпус ТГУ",    450.0, 320.0),
+    AntPlace("Научная библиотека",     420.0, 290.0),
+    AntPlace("Университетская роща",   500.0, 280.0),
+    AntPlace("Памятник Крылову",       460.0, 310.0),
+    AntPlace("Ботанический сад",       380.0, 350.0),
+    AntPlace("Второй корпус",          490.0, 340.0),
+    AntPlace("Спортивный комплекс",    530.0, 360.0),
+    AntPlace("Студенческий клуб",      440.0, 330.0),
+    AntPlace("Физический факультет",   410.0, 305.0),
+    AntPlace("Химический корпус",      475.0, 355.0)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -165,7 +167,12 @@ fun AntColonyScreen(onBack: () -> Unit) {
                                     .background(tsuBlue, RoundedCornerShape(8.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("${index + 1}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text(
+                                    "${index + 1}",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
                             }
                             Spacer(Modifier.width(12.dp))
                             Text(place.name, fontSize = 15.sp, fontWeight = FontWeight.Medium)
@@ -186,18 +193,20 @@ fun AntColonyScreen(onBack: () -> Unit) {
                     statusText = "Муравьи ищут маршрут..."
 
                     coroutineScope.launch {
-                        var finalDistance = 0.0
+                        val iterCounter = AtomicInteger(0)
+                        val distRef = AtomicReference(0.0)
+
                         val result = withContext(Dispatchers.Default) {
                             val colony = AntColony(places = selected.toList())
                             colony.run { iter, dist ->
-                                launch(Dispatchers.Main) {
-                                    iteration = iter
-                                    finalDistance = dist
-                                }
+                                iterCounter.set(iter)
+                                distRef.set(dist)
                             }
                         }
+
                         bestRoute = result
-                        bestDistance = finalDistance
+                        bestDistance = distRef.get()
+                        iteration = iterCounter.get()
                         isRunning = false
                         statusText = "Готово! Найден оптимальный обходной маршрут."
                     }
