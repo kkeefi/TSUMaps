@@ -30,6 +30,6 @@
 
         <activity android:name=".GeneticAlgorithmActivity" />
         <activity android:name=".NeuralNetworkActivity" />
-
+        <activity android:name=".AntColonyActivity" />
     </application>
 </manifest>
