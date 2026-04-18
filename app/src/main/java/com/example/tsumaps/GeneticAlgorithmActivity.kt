@@ -186,10 +186,10 @@ fun GeneticAlgorithmScreen(onBack: () -> Unit) {
                     statusText = "Алгоритм работает..."
 
                     coroutineScope.launch {
-//                        val calendar = java.util.Calendar.getInstance()
-//                        val currentMinutes = calendar.get(java.util.Calendar.HOUR_OF_DAY) * 60 +
-//                                calendar.get(java.util.Calendar.MINUTE)
-                        val currentMinutes = 800
+                        val calendar = java.util.Calendar.getInstance()
+                        val currentMinutes = calendar.get(java.util.Calendar.HOUR_OF_DAY) * 60 +
+                                calendar.get(java.util.Calendar.MINUTE)
+//                        val currentMinutes = 800
 
                         val result = withContext(Dispatchers.Default) {
                             val ga = GeneticAlgorithm(
@@ -270,7 +270,9 @@ fun FoodSelector(allItems: List<String>, selected: List<String>, onToggle: (Stri
 @Composable
 fun RouteStopCard(place: Place, tsuBlue: Color) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FF)),
         elevation = CardDefaults.cardElevation(2.dp)
     ) {
